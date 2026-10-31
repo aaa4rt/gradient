@@ -52,7 +52,7 @@ Get the latest version from the [**Releases**](../../releases) page:
 - **Windows:** “Windows protected your PC” → **More info → Run anyway**. Some antivirus apps may also flag new unsigned apps; you can restore and allow it.
 - **Mac:** **System Settings → Privacy & Security → Open Anyway**.
 
-## Grading scale
+## Grading scale (default)
 
 | Letter | A+ | A | A− | B+ | B | B− | C+ | C | C− | D+ | D | D− | F |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -60,6 +60,8 @@ Get the latest version from the [**Releases**](../../releases) page:
 | GPA points | 4.0* | 4.0 | 3.7 | 3.3 | 3.0 | 2.7 | 2.3 | 2.0 | 1.7 | 1.3 | 1.0 | 0.7 | 0 |
 
 \* 4.3 if you turn it on in Settings. Weighted bonuses are not added to an F.
+
+This is the default — in **Settings** you can change the % for every letter to match your school, and turn on **Round grades** (89.5% → 90%).
 
 ## Build it yourself
 

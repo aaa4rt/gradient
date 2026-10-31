@@ -204,6 +204,9 @@
   .sw{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.15);transition:transform .15s}
   .sw:hover{transform:scale(1.08)}
   .sw.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.18)}
+  #scaleGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 10px;margin-top:10px}
+  #scaleGrid label{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:13px;font-weight:650}
+  #scaleGrid .in{width:58px;text-align:right;padding:5px 8px}
   .sect{font-size:13px;color:rgba(255,255,255,.75);margin:18px 0 2px;font-weight:650}
   .note{font-size:12.5px;color:var(--sub);line-height:1.5;margin:4px 0 4px}
 
@@ -282,7 +285,14 @@
       <button class="switch" id="aplusSw" role="switch"></button>
     </div>
     <div class="opt"><span>GPA weighting<br><small>Honors +0.5 · AP +1.0 · IB +1.0</small></span></div>
-    <div class="opt"><span>Letter scale<br><small>A 93 · A− 90 · B+ 87 · B 83 · B− 80 · C+ 77 · C 73 · C− 70 · D+ 67 · D 63 · D− 60</small></span></div>
+    <div class="opt"><span>Round grades<br><small>89.5% rounds to 90% before picking the letter</small></span>
+      <button class="switch" id="roundSw" role="switch"></button>
+    </div>
+    <div class="opt" style="flex-direction:column;align-items:stretch"><span>Letter scale<br><small>Lowest % for each letter — change it to match your school</small></span>
+      <div id="scaleGrid"></div>
+      <div class="note" id="scaleWarn" style="color:#ffb3b3;display:none">Each letter should need a lower % than the one above it.</div>
+      <button class="add" id="scaleReset" style="align-self:flex-start">Reset to default</button>
+    </div>
     <h3 class="sect">Your data</h3>
     <p class="note">Move everything to another computer: export a backup here, then import it in Gradient there.</p>
     <button class="btn ghost" id="exportBtn">Export backup</button>
@@ -363,7 +373,15 @@ const ICON = {
 const SCALE = [['A+',97],['A',93],['A-',90],['B+',87],['B',83],['B-',80],['C+',77],['C',73],['C-',70],['D+',67],['D',63],['D-',60],['F',0]];
 const POINTS = {'A+':4.0,'A':4.0,'A-':3.7,'B+':3.3,'B':3.0,'B-':2.7,'C+':2.3,'C':2.0,'C-':1.7,'D+':1.3,'D':1.0,'D-':0.7,'F':0};
 const LEVELS = { reg:{name:'Regular',bonus:0}, hon:{name:'Honors',bonus:0.5}, ap:{name:'AP',bonus:1.0}, ib:{name:'IB',bonus:1.0} };
-const letterOf = pct => pct==null ? null : SCALE.find(([,min]) => pct >= min)[0];
+const DEFAULT_MINS = Object.fromEntries(SCALE.map(([l,m]) => [l,m]));
+// Uses your own cutoffs from Settings, and rounds first if "Round grades" is on (89.5 → 90)
+function letterOf(pct){
+  if(pct==null) return null;
+  const st = DB.settings, mins = { ...DEFAULT_MINS, ...(st.scale || {}) };
+  const v = st.round ? Math.round(pct) : pct;
+  for(const [l] of SCALE){ if(l==='F') return 'F'; const m = num(mins[l]); if(m!=null && v >= m) return l; }
+  return 'F';
+}
 const pointsOf = letter => letter==='A+' && DB.settings.aPlus43 ? 4.3 : (POINTS[letter] ?? null);
 const tintOf = letter => !letter ? '#b46cff' : ({A:'#3ddc97',B:'#5aa9ff',C:'#ffc35a',D:'#ff8a4c',F:'#ff5a6e'})[letter[0]];
 const pretty = l => l ? l.replace('-','−') : '—';
@@ -812,6 +830,7 @@ function applyLook(){
   document.querySelectorAll('#swatches button').forEach(b => b.classList.toggle('on', b.dataset.color===st.color));
   $('followSw').classList.toggle('on', st.followGrade !== false);
   $('aplusSw').classList.toggle('on', !!st.aPlus43);
+  $('roundSw').classList.toggle('on', !!st.round);
   updateSummary(); if(!cur) setTint(null);
 }
 document.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { DB.settings.style = b.dataset.theme; save(); applyLook(); });
@@ -821,9 +840,27 @@ Object.entries(THEMES).forEach(([k,t]) => {
   b.onclick = () => { DB.settings.color = k; save(); applyLook(); };
   $('swatches').appendChild(b);
 });
+function buildScale(){
+  const g = $('scaleGrid'); g.innerHTML = '';
+  const mins = { ...DEFAULT_MINS, ...(DB.settings.scale || {}) };
+  SCALE.filter(([l]) => l!=='F').forEach(([l]) => {
+    const lab = el('label'); lab.appendChild(el('span',null,pretty(l)));
+    const i = el('input','in num'); i.value = mins[l]; i.inputMode = 'decimal';
+    i.oninput = () => { DB.settings.scale = { ...(DB.settings.scale||{}), [l]: i.value }; save(); scaleChanged(); };
+    lab.appendChild(i); g.appendChild(lab);
+  });
+  scaleChanged(true);
+}
+function scaleChanged(quiet){
+  const mins = { ...DEFAULT_MINS, ...(DB.settings.scale || {}) }, vals = SCALE.filter(([l])=>l!=='F').map(([l]) => num(mins[l]));
+  $('scaleWarn').style.display = vals.some((v,i) => v==null || (i && v >= vals[i-1])) ? '' : 'none';
+  if(!quiet){ updateSummary(); renderList(); }
+}
+$('scaleReset').onclick = () => { delete DB.settings.scale; save(); buildScale(); scaleChanged(); toast('Scale reset'); };
+$('roundSw').onclick = () => { DB.settings.round = !DB.settings.round; save(); applyLook(); renderList(); };
 $('followSw').onclick = () => { DB.settings.followGrade = DB.settings.followGrade === false; save(); applyLook(); };
 $('aplusSw').onclick = () => { DB.settings.aPlus43 = !DB.settings.aPlus43; save(); applyLook(); renderList(); };
-$('gear').onclick = () => { openSheet('settingsSheet'); confirmBtn($('wipeBtn'), 'Erase all data', 'Tap again to erase everything', wipeAll); };
+$('gear').onclick = () => { openSheet('settingsSheet'); buildScale(); confirmBtn($('wipeBtn'), 'Erase all data', 'Tap again to erase everything', wipeAll); };
 
 /* ---- backup: export / import / erase ---- */
 const today = () => new Date().toISOString().slice(0,10);

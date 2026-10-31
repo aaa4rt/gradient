@@ -1,6 +1,6 @@
 [package]
 name = "gradient"
-version = "0.2.0"
+version = "0.2.1"
 description = "A lightweight grade and GPA calculator with a liquid glass look"
 edition = "2021"
 
