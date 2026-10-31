@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+ <defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+   <stop offset="0" stop-color="#3a2a9e"/><stop offset=".55" stop-color="#5b4fe0"/><stop offset="1" stop-color="#2fb7c9"/>
+  </linearGradient>
+  <radialGradient id="glowA" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#c58bff" stop-opacity=".55"/><stop offset="1" stop-color="#c58bff" stop-opacity="0"/></radialGradient>
+  <radialGradient id="glowB" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#7dffcf" stop-opacity=".45"/><stop offset="1" stop-color="#7dffcf" stop-opacity="0"/></radialGradient>
+  <linearGradient id="arc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".8"/></linearGradient>
+  <filter id="blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="22"/></filter>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="20" stdDeviation="26" flood-color="#0c0630" flood-opacity=".4"/></filter>
+  <clipPath id="sq"><rect x="64" y="64" width="896" height="896" rx="210"/></clipPath>
+  <clipPath id="disc"><circle cx="512" cy="512" r="290"/></clipPath>
+ </defs>
+ <g clip-path="url(#sq)">
+  <rect x="64" y="64" width="896" height="896" fill="url(#bg)"/>
+  <circle cx="290" cy="290" r="320" fill="url(#glowA)"/>
+  <circle cx="800" cy="810" r="340" fill="url(#glowB)"/>
+ </g>
+ <g filter="url(#shadow)">
+  <!-- frosted glass disc -->
+  <g clip-path="url(#disc)">
+   <g filter="url(#blur)"><rect x="64" y="64" width="896" height="896" fill="url(#bg)"/>
+    <circle cx="290" cy="290" r="320" fill="url(#glowA)"/><circle cx="800" cy="810" r="340" fill="url(#glowB)"/></g>
+   <rect width="1024" height="1024" fill="#fff" opacity=".16"/>
+  </g>
+  <circle cx="512" cy="512" r="290" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="6"/>
+  <!-- progress ring: faint track + bright arc (about 3/4) -->
+  <circle cx="512" cy="512" r="200" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="56"/>
+  <circle cx="512" cy="512" r="200" fill="none" stroke="url(#arc)" stroke-width="56" stroke-linecap="round"
+          stroke-dasharray="1256.6" stroke-dashoffset="282.7" transform="rotate(-90 512 512)"/>
+ </g>
+</svg>

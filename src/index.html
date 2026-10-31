@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gradient</title>
+<style>
+  :root{
+    --text:#fff; --sub:rgba(255,255,255,.55); --line:rgba(255,255,255,.14);
+    --c1:#5b3cc4; --tint:#b46cff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable","Segoe UI",Inter,sans-serif;
+    color:var(--text); background:#111014; overflow:hidden; -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; user-select:none;
+  }
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  input,select{font:inherit;color:inherit}
+  ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  /* ---------- background: soft color wash that follows your grade ---------- */
+  #wash{position:fixed;inset:0;z-index:-2;transition:background 1s;
+    background:
+      radial-gradient(70% 90% at 0% 0%, color-mix(in srgb,var(--c1) 70%,transparent), transparent 70%),
+      radial-gradient(70% 90% at 100% 100%, color-mix(in srgb,var(--tint) 55%,transparent), transparent 70%),
+      #241f2e;}
+  #grain{position:fixed;inset:0;z-index:-1;opacity:.06;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  /* ---------- title bar ---------- */
+  #titlebar{height:40px;flex:none;display:flex;align-items:center;padding:0 16px;gap:8px}
+  #titlebar .spacer{flex:1;align-self:stretch}
+  .lights{display:none;gap:8px;align-items:center}
+  body.custom-lights .lights{display:flex}
+  body.lights-right .lights{order:3}
+  body.lights-right #gear{order:1}
+  body.mac-native #titlebar{padding-left:84px}
+  .light{width:13px;height:13px;border-radius:50%;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.25);transition:filter .15s}
+  .light:hover{filter:brightness(1.1)} .light:active{filter:brightness(.8)}
+  .light.close{background:#ff5f57} .light.min{background:#febc2e} .light.max{background:#28c840}
+  body.blurred .light{background:rgba(255,255,255,.18)}
+  #gear{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--sub);transition:.2s}
+  #gear:hover{color:#fff;background:rgba(255,255,255,.08)}
+  #gear svg{width:17px;height:17px;fill:currentColor}
+
+  /* ---------- panels ---------- */
+  #app{flex:1;min-height:0;display:grid;grid-template-columns:minmax(240px,30%) 1fr;gap:14px;padding:0 14px 14px}
+  .panel{
+    position:relative;border-radius:26px;min-height:0;
+    background:linear-gradient(160deg,rgba(255,255,255,.11),rgba(255,255,255,.04) 60%,rgba(255,255,255,.07));
+    border:1px solid var(--line);
+    backdrop-filter:blur(30px) saturate(150%);-webkit-backdrop-filter:blur(30px) saturate(150%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 20px 50px rgba(0,0,0,.35);
+  }
+  body.minimal #wash,body.minimal #grain{opacity:0}
+  body.minimal .panel{background:#1a191e;backdrop-filter:none;-webkit-backdrop-filter:none;border-color:#2a2930;box-shadow:none}
+  body.minimal .card{background:#222128}
+
+  /* ---------- sidebar ---------- */
+  #side{display:flex;flex-direction:column;padding:16px 12px 12px;overflow:hidden}
+  .seg{display:inline-flex;align-self:flex-start;padding:3px;border-radius:999px;background:rgba(0,0,0,.18);
+    border:1px solid rgba(255,255,255,.08)}
+  .seg button{padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;color:var(--sub);transition:.2s}
+  .seg button.on{background:rgba(255,255,255,.2);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 2px 8px rgba(0,0,0,.2)}
+  #side .seg{margin:0 4px 12px}
+  .list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;padding:2px 0}
+  .row{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:14px;text-align:left;width:100%;transition:background .15s}
+  .row:hover{background:rgba(255,255,255,.06)}
+  .row.on{background:rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+  .badge{width:40px;height:40px;border-radius:11px;flex:none;display:grid;place-items:center;font-weight:750;font-size:14px;
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12)}
+  .badge.new{font-size:20px;font-weight:400}
+  .row .txt{min-width:0;flex:1}
+  .row .t{font-weight:650;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .s{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .foot{margin:8px 6px 0;font-size:11.5px;color:var(--sub)}
+
+  /* ---------- editor ---------- */
+  #main{display:flex;flex-direction:column;overflow:hidden}
+  #editor{flex:1;overflow-y:auto;padding:22px 26px 30px}
+  .head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .name{flex:1;min-width:0;background:none;border:0;outline:none;font-size:24px;font-weight:750;letter-spacing:-.01em;
+    padding:4px 8px;margin-left:-8px;border-radius:10px;user-select:text}
+  .name:hover{background:rgba(255,255,255,.05)} .name:focus{background:rgba(255,255,255,.08)}
+  .name::placeholder{color:rgba(255,255,255,.35)}
+  .ib{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--sub);flex:none;transition:.15s}
+  .ib:hover{color:#fff;background:rgba(255,255,255,.08)}
+  .ib svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ib svg circle{fill:currentColor;stroke:none}
+
+  .card{border-radius:20px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12);padding:16px 18px;margin-bottom:12px}
+  .card h3{font-size:13px;font-weight:650;color:rgba(255,255,255,.75);letter-spacing:.02em;margin-bottom:10px}
+
+  /* summary */
+  .summary{display:flex;align-items:center;gap:22px;padding:18px 22px}
+  .ring{width:118px;height:118px;flex:none;position:relative}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring circle{fill:none;stroke-width:10}
+  .ring .bg{stroke:rgba(255,255,255,.12)}
+  .ring .fg{stroke:var(--tint);stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1),stroke .6s}
+  .ring .mid{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .ring .big{font-size:30px;font-weight:800;line-height:1}
+  .ring .small{font-size:12px;color:var(--sub);margin-top:3px;font-variant-numeric:tabular-nums}
+  .stats{flex:1;min-width:0;display:grid;gap:10px}
+  .stat .k{font-size:12px;color:var(--sub)} .stat .v{font-size:20px;font-weight:750;font-variant-numeric:tabular-nums}
+  .stat .v small{font-size:13px;font-weight:600;color:var(--sub);margin-left:4px}
+  .stats.grid3{grid-template-columns:repeat(3,1fr)}
+
+  /* table-ish rows */
+  .cat-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .cat-name{flex:1;min-width:0;font-weight:700;font-size:15px}
+  .cat-avg{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.85)}
+  .in{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:7px 10px;outline:none;
+    min-width:0;user-select:text;transition:background .15s,border-color .15s}
+  .in:hover{background:rgba(255,255,255,.1)}
+  .in:focus{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3)}
+  .in::placeholder{color:rgba(255,255,255,.3)}
+  .in.plain{background:none;border-color:transparent;padding-left:6px}
+  .in.plain:hover{background:rgba(255,255,255,.06)}
+  .num{text-align:right;font-variant-numeric:tabular-nums;width:70px}
+  .pctbox{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--sub)}
+  .pctbox .in{width:58px}
+  select.in{appearance:none;-webkit-appearance:none;padding-right:26px;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='white' stroke-opacity='.6' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center}
+  select.in option{background:#2a2633;color:#fff}
+  .item{display:grid;grid-template-columns:1fr 70px 14px 70px 58px 30px;gap:6px;align-items:center;padding:2px 0}
+  .item .slash{text-align:center;color:var(--sub)}
+  .item .ipct{text-align:right;font-size:12.5px;color:var(--sub);font-variant-numeric:tabular-nums}
+  .x{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:rgba(255,255,255,.35);opacity:0;transition:.15s}
+  .item:hover .x,.course:hover .x,.cat-head:hover .x,.x:focus{opacity:1}
+  .x:hover{color:#fff;background:rgba(255,255,255,.1)}
+  .x svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+  .colhead{display:grid;gap:6px;font-size:11px;color:var(--sub);padding:0 0 4px;text-transform:uppercase;letter-spacing:.06em}
+  .add{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:rgba(255,255,255,.7);
+    padding:7px 12px;border-radius:999px;margin-top:6px;transition:.15s}
+  .add:hover{background:rgba(255,255,255,.08);color:#fff}
+  .add.big{border:1px dashed rgba(255,255,255,.22);width:100%;justify-content:center;padding:12px;border-radius:16px;margin:0 0 12px}
+
+  .final-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;font-size:13.5px}
+  .need{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px}
+  .needbox{border-radius:14px;padding:10px 12px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.08)}
+  .needbox .k{font-size:12px;color:var(--sub)} .needbox .v{font-size:18px;font-weight:750;margin-top:2px;font-variant-numeric:tabular-nums}
+  .needbox .v.ok{color:#7af0b4} .needbox .v.no{color:#ff8a9a;font-size:14px}
+  .hint{font-size:12px;color:var(--sub);margin-top:8px;line-height:1.5}
+
+  .course{display:grid;grid-template-columns:1fr 84px 64px 142px 30px;gap:6px;align-items:center;padding:2px 0}
+  .lvl-tag{font-size:11px;color:var(--sub)}
+  .prev{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;font-size:13px;color:rgba(255,255,255,.8)}
+  .prev label{display:flex;align-items:center;gap:8px}
+
+  .empty{color:var(--sub);font-size:14px;text-align:center;padding:60px 20px;line-height:1.6}
+
+  /* ---------- sheets ---------- */
+  .sheet{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.35);z-index:10;
+    opacity:0;pointer-events:none;transition:opacity .2s}
+  .sheet.open{opacity:1;pointer-events:auto}
+  .sheet .panel{width:min(400px,90vw);max-height:80vh;padding:22px;display:flex;flex-direction:column;overflow:auto;
+    transform:translateY(10px) scale(.98);transition:transform .2s;background:rgba(40,38,46,.75)}
+  .sheet.open .panel{transform:none}
+  .sheet h2{font-size:17px;margin-bottom:6px}
+  .opt{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid rgba(255,255,255,.08);font-size:13.5px}
+  .opt:last-of-type{border-bottom:0}
+  .opt small{color:var(--sub)}
+  .btn{padding:11px 16px;border-radius:999px;font-weight:600;font-size:13px;background:#fff;color:#111;transition:.15s;width:100%;margin-top:10px}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.14)}
+  .btn.danger{color:#ff8a8a}
+  .switch{width:44px;height:26px;border-radius:999px;background:rgba(255,255,255,.15);position:relative;flex:none;
+    border:1px solid rgba(255,255,255,.12);transition:background .2s}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;
+    box-shadow:0 2px 6px rgba(0,0,0,.3);transition:transform .2s}
+  .switch.on{background:rgba(255,255,255,.55)} .switch.on::after{transform:translateX(18px)}
+
+  #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;z-index:20;
+    padding:9px 16px;font-size:12.5px;border-radius:999px;background:rgba(30,30,36,.85);border:1px solid var(--line);
+    backdrop-filter:blur(20px);transition:.25s;pointer-events:none;white-space:nowrap}
+  #toast.show{opacity:1;transform:translateX(-50%)}
+
+  @media (max-width:760px){
+    #app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+    #side{max-height:200px}
+    .summary{flex-direction:column;align-items:flex-start}
+    .stats.grid3{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+<div id="wash"></div><div id="grain"></div>
+
+<header id="titlebar" data-tauri-drag-region>
+  <div class="lights">
+    <button class="light close" id="winClose" title="Close"></button>
+    <button class="light min" id="winMin" title="Minimize"></button>
+    <button class="light max" id="winMax" title="Maximize"></button>
+  </div>
+  <div class="spacer" data-tauri-drag-region></div>
+  <button id="gear" title="Settings">
+    <svg viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.7a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.7a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+  </button>
+</header>
+
+<main id="app">
+  <aside class="panel" id="side">
+    <div class="seg" id="modeSeg">
+      <button data-mode="grade" class="on">Grades</button>
+      <button data-mode="gpa">GPA</button>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="foot">Saved automatically on this computer</div>
+  </aside>
+  <section class="panel" id="main">
+    <div id="editor"></div>
+  </section>
+</main>
+
+<!-- ⋯ menu -->
+<div class="sheet" id="menuSheet">
+  <div class="panel">
+    <h2 id="menuTitle">Options</h2>
+    <button class="btn ghost" id="menuDup" style="margin-top:12px">Duplicate</button>
+    <button class="btn ghost danger" id="menuDel">Delete</button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="sheet" id="settingsSheet">
+  <div class="panel">
+    <h2>Settings</h2>
+    <div class="opt"><span>Theme</span>
+      <div class="seg" id="themeSeg"><button data-theme="glass">Glass</button><button data-theme="minimal">Minimal</button></div>
+    </div>
+    <div class="opt" id="lightsOpt" style="display:none"><span>Window buttons</span>
+      <div class="seg" id="lightsSeg"><button data-side="left">Left</button><button data-side="right">Right</button></div>
+    </div>
+    <div class="opt"><span>A+ counts as 4.3<br><small>Off: A+ = 4.0 (most schools)</small></span>
+      <button class="switch" id="aplusSw" role="switch"></button>
+    </div>
+    <div class="opt"><span>GPA weighting<br><small>Honors +0.5 · AP +1.0 · IB +1.0</small></span></div>
+    <div class="opt"><span>Letter scale<br><small>A 93 · A− 90 · B+ 87 · B 83 · B− 80 · C+ 77 · C 73 · C− 70 · D+ 67 · D 63 · D− 60</small></span></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= helpers ================= */
+const $ = id => document.getElementById(id);
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt!=null) e.textContent = txt; return e; };
+const uid = () => Math.random().toString(36).slice(2, 10);
+const num = v => { if(v===''||v==null) return null; const n = parseFloat(String(v).replace(',','.')); return isFinite(n) ? n : null; };
+const fmt1 = n => (Math.round(n*10)/10).toFixed(1).replace(/\.0$/,'');
+const fmt2 = n => (Math.round(n*100)/100).toFixed(2);
+const store = {
+  get:k=>{try{return localStorage.getItem(k)}catch{return null}},
+  set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},
+};
+let toastT; function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
+const ICON = {
+  x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>',
+};
+
+/* ================= grading scale ================= */
+const SCALE = [['A+',97],['A',93],['A-',90],['B+',87],['B',83],['B-',80],['C+',77],['C',73],['C-',70],['D+',67],['D',63],['D-',60],['F',0]];
+const POINTS = {'A+':4.0,'A':4.0,'A-':3.7,'B+':3.3,'B':3.0,'B-':2.7,'C+':2.3,'C':2.0,'C-':1.7,'D+':1.3,'D':1.0,'D-':0.7,'F':0};
+const LEVELS = { reg:{name:'Regular',bonus:0}, hon:{name:'Honors',bonus:0.5}, ap:{name:'AP',bonus:1.0}, ib:{name:'IB',bonus:1.0} };
+const letterOf = pct => pct==null ? null : SCALE.find(([,min]) => pct >= min)[0];
+const pointsOf = letter => letter==='A+' && DB.settings.aPlus43 ? 4.3 : (POINTS[letter] ?? null);
+const tintOf = letter => !letter ? '#b46cff' : ({A:'#3ddc97',B:'#5aa9ff',C:'#ffc35a',D:'#ff8a4c',F:'#ff5a6e'})[letter[0]];
+const pretty = l => l ? l.replace('-','−') : '—';
+
+/* ================= data (saved in this computer's app storage) ================= */
+const KEY = 'gradient_v1';
+let DB;
+function load(){
+  try{ DB = JSON.parse(store.get(KEY)); }catch{ DB = null; }
+  if(!DB || !Array.isArray(DB.grades)) DB = { grades:[], gpas:[], settings:{ aPlus43:false }, last:{} };
+  DB.settings ||= { aPlus43:false }; DB.last ||= {}; DB.gpas ||= [];
+  if(!DB.grades.length && !DB.gpas.length && !store.get(KEY)){  // first run: one example of each
+    DB.grades.push(newGrade('My first class', true));
+    DB.gpas.push(newGpa('This year'));
+  }
+}
+let saveT; function save(){ clearTimeout(saveT); saveT = setTimeout(() => store.set(KEY, JSON.stringify(DB)), 250); }
+addEventListener('beforeunload', () => store.set(KEY, JSON.stringify(DB)));
+
+function newGrade(name='Untitled class', example=false){
+  const cat = (n,w) => ({ id:uid(), name:n, weight:w, items: example ? [] : [] });
+  return { id:uid(), name, updated:Date.now(), mode:'weighted', finalWeight:20, target:'',
+    cats: example ? [cat('Homework',30), cat('Quizzes',20), cat('Tests',50)] : [cat('Homework',40), cat('Tests',60)] };
+}
+function newGpa(name='Untitled GPA'){
+  return { id:uid(), name, updated:Date.now(), prevGpa:'', prevCredits:'',
+    courses:[{ id:uid(), name:'', grade:'A', credits:1, level:'reg' }] };
+}
+
+/* ================= math ================= */
+function catStats(c){
+  let s = 0, t = 0, n = 0;
+  for(const it of c.items){ const a = num(it.score), b = num(it.total); if(a!=null && b!=null && b>0){ s += a; t += b; n++; } }
+  return { score:s, total:t, count:n, pct: t>0 ? s/t*100 : null };
+}
+function gradeOf(g){
+  const stats = g.cats.map(catStats);
+  if(g.mode === 'points'){
+    const s = stats.reduce((a,x)=>a+x.score,0), t = stats.reduce((a,x)=>a+x.total,0);
+    return { pct: t>0 ? s/t*100 : null, stats, usedWeight:null };
+  }
+  let w = 0, sum = 0;
+  g.cats.forEach((c,i) => { const cw = num(c.weight) ?? 0; if(stats[i].pct!=null && cw>0){ w += cw; sum += cw*stats[i].pct; } });
+  return { pct: w>0 ? sum/w : null, stats, usedWeight:w };
+}
+// Score needed on a final worth `fw`% to finish with `target`%, if everything else stays the same
+function neededOnFinal(current, fw, target){
+  if(current==null || fw==null || fw<=0 || fw>=100 || target==null) return null;
+  const f = fw/100; return (target - current*(1-f)) / f;
+}
+function gpaOf(p){
+  let cr = 0, unw = 0, wt = 0, n = 0;
+  for(const c of p.courses){
+    const credits = num(c.credits), pts = pointsOf(c.grade);
+    if(credits==null || credits<=0 || pts==null) continue;
+    const bonus = c.grade==='F' ? 0 : (LEVELS[c.level]?.bonus || 0);
+    cr += credits; unw += pts*credits; wt += (pts+bonus)*credits; n++;
+  }
+  const res = { credits:cr, count:n, unweighted: cr ? unw/cr : null, weighted: cr ? wt/cr : null, cumulative:null };
+  const pg = num(p.prevGpa), pc = num(p.prevCredits);
+  if(pg!=null && pc!=null && pc>0 && cr>0) res.cumulative = (pg*pc + wt) / (pc + cr);
+  return res;
+}
+
+/* ================= sidebar ================= */
+let mode = 'grade', cur = null;
+const docs = () => mode==='grade' ? DB.grades : DB.gpas;
+function subtitle(d){
+  if(mode==='grade'){ const r = gradeOf(d); return r.pct==null ? 'No grades yet' : `${fmt1(r.pct)}% · ${pretty(letterOf(r.pct))}`; }
+  const r = gpaOf(d); return r.count ? `${fmt2(r.weighted)} weighted · ${r.count} class${r.count>1?'es':''}` : 'No classes yet';
+}
+function badge(d){
+  if(mode==='grade'){ const p = gradeOf(d).pct; return p==null ? '–' : pretty(letterOf(p)); }
+  const r = gpaOf(d); return r.count ? fmt2(r.unweighted).slice(0,3) : '–';
+}
+function renderList(){
+  const list = $('list'); list.innerHTML = '';
+  const add = el('button','row'); add.innerHTML = '<div class="badge new">+</div><div class="txt"><div class="t"></div><div class="s"></div></div>';
+  add.querySelector('.t').textContent = mode==='grade' ? 'New class' : 'New GPA';
+  add.querySelector('.s').textContent = mode==='grade' ? 'Track grades for a class' : 'Calculate a GPA';
+  add.onclick = () => { const d = mode==='grade' ? newGrade() : newGpa(); docs().unshift(d); save(); open(d); const n = $('editor').querySelector('.name'); n?.focus(); n?.select(); };
+  list.appendChild(add);
+  [...docs()].sort((a,b)=>b.updated-a.updated).forEach(d => {
+    const r = el('button','row'+(d===cur?' on':'')); r.dataset.id = d.id;
+    r.innerHTML = '<div class="badge"></div><div class="txt"><div class="t"></div><div class="s"></div></div>';
+    fillRow(r, d); r.onclick = () => open(d); list.appendChild(r);
+  });
+}
+function fillRow(r, d){
+  r.querySelector('.badge').textContent = badge(d);
+  r.querySelector('.t').textContent = d.name || 'Untitled';
+  r.querySelector('.s').textContent = subtitle(d);
+}
+function refreshRow(){ const r = $('list').querySelector(`[data-id="${cur?.id}"]`); if(r) fillRow(r, cur); }
+document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+function setMode(m){
+  mode = m; DB.last.mode = m; save();
+  document.querySelectorAll('#modeSeg button').forEach(x => x.classList.toggle('on', x.dataset.mode===m));
+  const d = docs().find(x => x.id === DB.last[m]) || [...docs()].sort((a,b)=>b.updated-a.updated)[0];
+  d ? open(d) : (cur = null, renderList(), emptyEditor());
+}
+function emptyEditor(){
+  $('editor').innerHTML = '';
+  $('editor').appendChild(el('div','empty', mode==='grade' ? 'Click “New class” to start tracking grades.' : 'Click “New GPA” to calculate a GPA.'));
+  setTint(null);
+}
+
+/* ================= editing ================= */
+function open(d){ cur = d; DB.last[mode] = d.id; save(); renderList(); renderEditor(); }
+function touched(structure){
+  cur.updated = Date.now(); save();
+  if(structure) renderEditor(); else updateSummary();
+  refreshRow();
+}
+function input(cls, value, onInput, attrs={}){
+  const i = el('input','in '+(cls||'')); i.value = value ?? ''; Object.assign(i, attrs);
+  i.oninput = () => onInput(i.value); return i;
+}
+function xBtn(fn, title='Remove'){ const b = el('button','x'); b.title = title; b.innerHTML = ICON.x; b.onclick = fn; return b; }
+function header(){
+  const h = el('div','head');
+  const n = input('', cur.name, v => { cur.name = v; touched(); }, { placeholder: mode==='grade' ? 'Class name' : 'GPA name', maxLength:80 });
+  n.className = 'name';
+  const more = el('button','ib'); more.title = 'More'; more.innerHTML = ICON.more; more.onclick = openMenu;
+  h.append(n, more); return h;
+}
+function renderEditor(){
+  const ed = $('editor'), top = ed.scrollTop; ed.innerHTML = '';
+  ed.appendChild(header());
+  if(mode==='grade') renderGrade(ed); else renderGpa(ed);
+  ed.scrollTop = top; updateSummary();
+}
+function ring(){
+  const r = el('div','ring');
+  r.innerHTML = '<svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/></svg><div class="mid"><div><div class="big">—</div><div class="small"></div></div></div>';
+  return r;
+}
+function setRing(r, frac, big, small){
+  r.querySelector('.fg').style.strokeDashoffset = 326.7 * (1 - Math.max(0, Math.min(1, frac||0)));
+  r.querySelector('.big').textContent = big; r.querySelector('.small').textContent = small;
+}
+function setTint(letter){ document.body.style.setProperty('--tint', tintOf(letter)); }
+
+/* ---- class grade editor ---- */
+function renderGrade(ed){
+  const g = cur;
+  // summary
+  const sum = el('div','card summary'); sum.id = 'sum';
+  const st = el('div','stats');
+  st.innerHTML = `<div class="stat"><div class="k">Current grade</div><div class="v" id="sPct">—</div></div>
+    <div class="stat"><div class="k" id="sInfoK">Graded</div><div class="v" id="sInfo">—</div></div>`;
+  const ms = el('div','seg'); ms.style.alignSelf = 'start';
+  [['weighted','Weighted'],['points','Total points']].forEach(([m,l]) => { const b = el('button', g.mode===m?'on':'', l);
+    b.onclick = () => { g.mode = m; touched(true); }; ms.appendChild(b); });
+  sum.append(ring(), st, ms); ed.appendChild(sum);
+
+  // weights warning slot
+  const warn = el('div','hint'); warn.id = 'wWarn'; warn.style.margin = '-4px 6px 12px'; ed.appendChild(warn);
+
+  // categories
+  g.cats.forEach(c => {
+    const card = el('div','card');
+    const h = el('div','cat-head');
+    const nm = input('plain cat-name', c.name, v => { c.name = v; touched(); }, { placeholder:'Category name', maxLength:60 });
+    h.appendChild(nm);
+    if(g.mode==='weighted'){
+      const pb = el('div','pctbox'); pb.append(input('num', c.weight, v => { c.weight = v; touched(); }, { placeholder:'0', inputMode:'decimal', title:'Weight' }), el('span',null,'%'));
+      pb.title = 'How much this category counts'; h.appendChild(pb);
+    }
+    const avg = el('div','cat-avg'); avg.dataset.cat = c.id; h.appendChild(avg);
+    h.appendChild(xBtn(() => { g.cats = g.cats.filter(x=>x!==c); touched(true); }, 'Delete category'));
+    card.appendChild(h);
+
+    if(c.items.length){
+      const ch = el('div','colhead item'); ch.innerHTML = '<span>Assignment</span><span style="text-align:right">Score</span><span></span><span style="text-align:right">Out of</span><span style="text-align:right">%</span><span></span>';
+      card.appendChild(ch);
+    }
+    c.items.forEach(it => {
+      const row = el('div','item');
+      const pct = el('div','ipct'); pct.dataset.item = it.id;
+      row.append(
+        input('', it.name, v => { it.name = v; touched(); }, { placeholder:'Assignment', maxLength:80 }),
+        input('num', it.score, v => { it.score = v; touched(); }, { placeholder:'—', inputMode:'decimal' }),
+        el('span','slash','/'),
+        input('num', it.total, v => { it.total = v; touched(); }, { placeholder:'100', inputMode:'decimal' }),
+        pct,
+        xBtn(() => { c.items = c.items.filter(x=>x!==it); touched(true); })
+      );
+      card.appendChild(row);
+    });
+    const add = el('button','add','+ Add assignment');
+    add.onclick = () => { c.items.push({ id:uid(), name:'', score:'', total:'100' }); touched(true);
+      setTimeout(() => { const last = [...document.querySelectorAll('.item')].filter(r=>r.closest('.card')===findCard(c)).pop(); last?.querySelector('input')?.focus(); }, 20); };
+    card.appendChild(add);
+    card.dataset.cat = c.id;
+    ed.appendChild(card);
+  });
+  const addCat = el('button','add big','+ Add category');
+  addCat.onclick = () => { g.cats.push({ id:uid(), name:'', weight: g.mode==='weighted' ? '' : 0, items:[] }); touched(true);
+    setTimeout(()=>{ const cs = document.querySelectorAll('.cat-name'); cs[cs.length-1]?.focus(); },20); };
+  ed.appendChild(addCat);
+
+  // final exam
+  const fin = el('div','card'); fin.appendChild(el('h3',null,'What do I need on the final?'));
+  const fr = el('div','final-row');
+  const l1 = el('label','pctbox'); l1.append(el('span',null,'Final is worth'),
+    input('num', g.finalWeight, v => { g.finalWeight = v; touched(); }, { placeholder:'20', inputMode:'decimal' }), el('span',null,'% of the grade'));
+  const l2 = el('label','pctbox'); l2.append(el('span',null,'I want at least'),
+    input('num', g.target, v => { g.target = v; touched(); }, { placeholder:'e.g. 85', inputMode:'decimal' }), el('span',null,'%'));
+  fr.append(l1, l2); fin.appendChild(fr);
+  const need = el('div','need'); need.id = 'need'; fin.appendChild(need);
+  fin.appendChild(el('div','hint','Assumes your current grade stays the same for everything except the final.'));
+  ed.appendChild(fin);
+}
+const findCard = c => document.querySelector(`.card[data-cat="${c.id}"]`);
+
+/* ---- GPA editor ---- */
+// "AP Biology" → AP, "IB Art" → IB, "Honors Chem" / "Chem H" → Honors
+const guessLevel = name => /\bAP\b/i.test(name) ? 'ap' : /\bIB\b/i.test(name) ? 'ib' : /\b(honou?rs|hon|H)\b/i.test(name) ? 'hon' : 'reg';
+function renderGpa(ed){
+  const p = cur;
+  const sum = el('div','card summary'); sum.id = 'sum';
+  const st = el('div','stats grid3');
+  st.innerHTML = `<div class="stat"><div class="k">Unweighted</div><div class="v" id="gU">—</div></div>
+    <div class="stat"><div class="k">Weighted</div><div class="v" id="gW">—</div></div>
+    <div class="stat"><div class="k">Credits</div><div class="v" id="gC">—</div></div>`;
+  sum.append(ring(), st); ed.appendChild(sum);
+
+  const card = el('div','card');
+  const ch = el('div','colhead course'); ch.innerHTML = '<span>Class</span><span>Grade</span><span style="text-align:right">Credits</span><span>Level</span><span></span>';
+  card.appendChild(ch);
+  p.courses.forEach(c => {
+    const row = el('div','course');
+    const gs = el('select','in'); SCALE.forEach(([l]) => { const o = el('option',null,pretty(l)); o.value = l; gs.appendChild(o); }); gs.value = c.grade;
+    gs.onchange = () => { c.grade = gs.value; touched(); };
+    const ls = el('select','in'); Object.entries(LEVELS).forEach(([k,v]) => { const o = el('option',null, v.bonus ? `${v.name} (+${v.bonus})` : v.name); o.value = k; ls.appendChild(o); }); ls.value = c.level;
+    ls.onchange = () => { c.level = ls.value; touched(); };
+    row.append(
+      input('', c.name, v => { c.name = v; touched(); }, { placeholder:'Class name', maxLength:80 }),
+      gs,
+      input('num', c.credits, v => { c.credits = v; touched(); }, { placeholder:'1', inputMode:'decimal', style:'width:100%' }),
+      ls,
+      xBtn(() => { p.courses = p.courses.filter(x=>x!==c); touched(true); })
+    );
+    card.appendChild(row);
+  });
+  const btns = el('div'); btns.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px';
+  const add = el('button','add','+ Add class');
+  add.onclick = () => { p.courses.push({ id:uid(), name:'', grade:'A', credits:1, level:'reg' }); touched(true);
+    setTimeout(()=>{ const r = document.querySelectorAll('.course input'); r[r.length-2]?.focus(); },20); };
+  const imp = el('button','add','↓ Add from my classes');
+  imp.title = 'Adds every class from the Grades tab with its current letter';
+  imp.onclick = () => {
+    const have = new Set(p.courses.map(c => c.name.trim().toLowerCase()));
+    let n = 0;
+    DB.grades.forEach(g => { const pct = gradeOf(g).pct; if(pct==null || have.has((g.name||'').trim().toLowerCase())) return;
+      p.courses.push({ id:uid(), name:g.name, grade:letterOf(pct), credits:1, level:guessLevel(g.name) }); n++; });
+    touched(true); toast(n ? `Added ${n} class${n>1?'es':''}` : 'No new classes with grades to add');
+  };
+  btns.append(add, imp); card.appendChild(btns);
+  ed.appendChild(card);
+
+  const prev = el('div','card'); prev.appendChild(el('h3',null,'Include earlier semesters (optional)'));
+  const pr = el('div','prev');
+  const a = el('label'); a.append(el('span',null,'Previous GPA'), input('num', p.prevGpa, v => { p.prevGpa = v; touched(); }, { placeholder:'3.50', inputMode:'decimal' }));
+  const b = el('label'); b.append(el('span',null,'Previous credits'), input('num', p.prevCredits, v => { p.prevCredits = v; touched(); }, { placeholder:'12', inputMode:'decimal' }));
+  const out = el('div','stat'); out.innerHTML = '<div class="k">Cumulative weighted</div><div class="v" id="gCum">—</div>';
+  pr.append(a, b, out); prev.appendChild(pr);
+  prev.appendChild(el('div','hint','Weighting: Honors +0.5, AP +1.0, IB +1.0 (not added to an F). Use the weighted GPA from your transcript as “Previous GPA”.'));
+  ed.appendChild(prev);
+}
+
+/* ---- live numbers (no re-render, so typing never loses focus) ---- */
+function updateSummary(){
+  if(!cur) return;
+  if(mode==='grade'){
+    const g = cur, r = gradeOf(g), L = letterOf(r.pct);
+    setRing($('sum').querySelector('.ring'), (r.pct??0)/100, pretty(L), r.pct==null ? 'no grades' : fmt1(r.pct)+'%');
+    $('sPct').innerHTML = r.pct==null ? '—' : `${fmt1(r.pct)}%<small>${pretty(L)}</small>`;
+    const graded = r.stats.reduce((a,x)=>a+x.count,0);
+    $('sInfo').textContent = graded ? `${graded} assignment${graded>1?'s':''}` : '—';
+    setTint(L);
+    g.cats.forEach((c,i) => { const a = document.querySelector(`.cat-avg[data-cat="${c.id}"]`); if(a) a.textContent = r.stats[i].pct==null ? '—' : fmt1(r.stats[i].pct)+'%';
+      c.items.forEach(it => { const e = document.querySelector(`.ipct[data-item="${it.id}"]`); if(!e) return;
+        const s = num(it.score), t = num(it.total); e.textContent = s!=null && t ? fmt1(s/t*100)+'%' : ''; }); });
+    const warn = $('wWarn');
+    if(g.mode==='weighted'){
+      const total = g.cats.reduce((a,c)=>a+(num(c.weight)||0),0);
+      warn.textContent = Math.abs(total-100) > 0.01 ? `Category weights add up to ${fmt1(total)}% (usually 100%).` : '';
+      warn.style.display = warn.textContent ? '' : 'none';
+    } else warn.style.display = 'none';
+    // final exam
+    const need = $('need'); need.innerHTML = '';
+    const fw = num(g.finalWeight);
+    if(r.pct==null){ need.appendChild(el('div','hint','Enter some scores first.')); return; }
+    if(fw==null || fw<=0 || fw>=100){ need.appendChild(el('div','hint','Enter what percent of your grade the final is worth.')); return; }
+    const targets = [90, 80, 70]; const tg = num(g.target); if(tg!=null && !targets.includes(tg)) targets.unshift(tg);
+    targets.forEach(t => {
+      const n = neededOnFinal(r.pct, fw, t), box = el('div','needbox');
+      box.appendChild(el('div','k', `To get ${fmt1(t)}% (${pretty(letterOf(t))})`));
+      const v = el('div','v');
+      if(n <= 0){ v.textContent = 'Already locked in'; v.classList.add('ok'); }
+      else if(n > 100){ v.textContent = `Not reachable (${fmt1(n)}%)`; v.classList.add('no'); }
+      else v.textContent = `${fmt1(n)}%`;
+      box.appendChild(v); need.appendChild(box);
+    });
+  } else {
+    const r = gpaOf(cur);
+    setRing($('sum').querySelector('.ring'), (r.unweighted??0)/4, r.count ? fmt2(r.unweighted) : '—', r.count ? 'out of 4.0' : 'no classes');
+    $('gU').textContent = r.count ? fmt2(r.unweighted) : '—';
+    $('gW').textContent = r.count ? fmt2(r.weighted) : '—';
+    $('gC').textContent = r.count ? fmt1(r.credits) : '—';
+    $('gCum').textContent = r.cumulative==null ? '—' : fmt2(r.cumulative);
+    setTint(r.count ? (r.unweighted>=3.7?'A':r.unweighted>=2.7?'B':r.unweighted>=1.7?'C':r.unweighted>=0.7?'D':'F') : null);
+  }
+}
+
+/* ================= menu, settings, sheets ================= */
+function openSheet(id){ closeSheets(); $(id).classList.add('open'); }
+function closeSheets(){ document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open')); }
+document.querySelectorAll('.sheet').forEach(s => s.addEventListener('click', e => { if(e.target===s) closeSheets(); }));
+addEventListener('keydown', e => { if(e.key==='Escape') closeSheets(); });
+
+function openMenu(){
+  openSheet('menuSheet'); $('menuTitle').textContent = cur.name || 'Untitled';
+  const del = $('menuDel'); del.textContent = 'Delete'; delete del.dataset.armed;
+  $('menuDup').onclick = () => { const copy = JSON.parse(JSON.stringify(cur)); copy.id = uid(); copy.name = (cur.name||'Untitled')+' (copy)'; copy.updated = Date.now();
+    docs().unshift(copy); save(); closeSheets(); open(copy); toast('Duplicated'); };
+  del.onclick = () => {
+    if(!del.dataset.armed){ del.dataset.armed = '1'; del.textContent = 'Tap again to delete'; return; }
+    const arr = docs(), i = arr.indexOf(cur); arr.splice(i,1); DB.last[mode] = null; save(); closeSheets(); toast('Deleted'); setMode(mode);
+  };
+}
+$('gear').onclick = () => openSheet('settingsSheet');
+function applyTheme(t){ document.body.classList.toggle('minimal', t==='minimal'); store.set('theme', t);
+  document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme===t)); }
+document.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => applyTheme(b.dataset.theme));
+$('aplusSw').onclick = () => { DB.settings.aPlus43 = !DB.settings.aPlus43; $('aplusSw').classList.toggle('on', DB.settings.aPlus43); save();
+  if(mode==='gpa') updateSummary(); renderList(); };
+
+/* ================= window buttons (desktop app only) ================= */
+(() => {
+  const win = window.__TAURI__?.window?.getCurrentWindow?.();
+  if(!win) return;
+  if(/Mac/i.test(navigator.platform || navigator.userAgent)){ document.body.classList.add('mac-native'); return; }
+  document.body.classList.add('custom-lights'); $('lightsOpt').style.display = '';
+  $('winClose').onclick = () => { store.set(KEY, JSON.stringify(DB)); win.close(); };
+  $('winMin').onclick = () => win.minimize();
+  $('winMax').onclick = () => win.toggleMaximize();
+  const side = s => { document.body.classList.toggle('lights-right', s==='right'); store.set('lights', s);
+    document.querySelectorAll('#lightsSeg button').forEach(b => b.classList.toggle('on', b.dataset.side===s)); };
+  document.querySelectorAll('#lightsSeg button').forEach(b => b.onclick = () => side(b.dataset.side));
+  side(store.get('lights') || 'left');
+  addEventListener('blur', () => document.body.classList.add('blurred'));
+  addEventListener('focus', () => document.body.classList.remove('blurred'));
+})();
+
+/* ================= boot ================= */
+load();
+applyTheme(store.get('theme') || 'glass');
+$('aplusSw').classList.toggle('on', !!DB.settings.aPlus43);
+setMode(DB.last.mode || 'grade');
+</script>
+</body>
+</html>
