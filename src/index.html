@@ -26,7 +26,7 @@
     background:
       radial-gradient(70% 90% at 0% 0%, color-mix(in srgb,var(--c1) 70%,transparent), transparent 70%),
       radial-gradient(70% 90% at 100% 100%, color-mix(in srgb,var(--tint) 55%,transparent), transparent 70%),
-      #241f2e;}
+      var(--base,#241f2e);}
   #grain{position:fixed;inset:0;z-index:-1;opacity:.06;pointer-events:none;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 
@@ -176,6 +176,37 @@
     box-shadow:0 2px 6px rgba(0,0,0,.3);transition:transform .2s}
   .switch.on{background:rgba(255,255,255,.55)} .switch.on::after{transform:translateX(18px)}
 
+  /* ---------- folders ---------- */
+  .sidehead{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px 4px}
+  #side .sidehead .seg{margin:0}
+  .frow{display:flex;align-items:center;gap:8px;padding:9px 8px 9px 6px;border-radius:12px;cursor:pointer;color:rgba(255,255,255,.85);
+    font-size:13px;font-weight:650;margin-top:4px;outline:none}
+  .frow:hover{background:rgba(255,255,255,.05)}
+  .frow:focus-visible{box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+  .frow svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .frow svg circle{fill:currentColor;stroke:none}
+  .chev{display:grid;transition:transform .15s;transform:rotate(90deg);color:var(--sub)}
+  .frow.closed .chev{transform:none}
+  .ficon{display:grid;color:var(--tint)}
+  .fname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fcount{font-size:11px;color:var(--sub);font-weight:600;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.08)}
+  .fbtn{width:26px;height:26px;border-radius:50%;display:none;place-items:center;color:var(--sub)}
+  .frow:hover .fbtn,.frow:focus-within .fbtn{display:grid}
+  .frow:hover .fcount{display:none}
+  .fbtn:hover{background:rgba(255,255,255,.12);color:#fff}
+  .row.indent{padding-left:22px}
+  .row.indent .badge{width:34px;height:34px;font-size:12.5px;border-radius:10px}
+  .fempty{font-size:11.5px;color:var(--sub);padding:4px 0 8px 32px}
+  .badge svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}
+
+  /* ---------- settings extras ---------- */
+  #swatches{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .sw{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.15);transition:transform .15s}
+  .sw:hover{transform:scale(1.08)}
+  .sw.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.18)}
+  .sect{font-size:13px;color:rgba(255,255,255,.75);margin:18px 0 2px;font-weight:650}
+  .note{font-size:12.5px;color:var(--sub);line-height:1.5;margin:4px 0 4px}
+
   #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;z-index:20;
     padding:9px 16px;font-size:12.5px;border-radius:999px;background:rgba(30,30,36,.85);border:1px solid var(--line);
     backdrop-filter:blur(20px);transition:.25s;pointer-events:none;white-space:nowrap}
@@ -206,9 +237,12 @@
 
 <main id="app">
   <aside class="panel" id="side">
-    <div class="seg" id="modeSeg">
-      <button data-mode="grade" class="on">Grades</button>
-      <button data-mode="gpa">GPA</button>
+    <div class="sidehead">
+      <div class="seg" id="modeSeg">
+        <button data-mode="grade" class="on">Grades</button>
+        <button data-mode="gpa">GPA</button>
+      </div>
+      <button class="ib" id="newFolder" title="New folder"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 13.5h5"/></svg></button>
     </div>
     <div class="list" id="list"></div>
     <div class="foot">Saved automatically on this computer</div>
@@ -222,7 +256,8 @@
 <div class="sheet" id="menuSheet">
   <div class="panel">
     <h2 id="menuTitle">Options</h2>
-    <button class="btn ghost" id="menuDup" style="margin-top:12px">Duplicate</button>
+    <button class="btn ghost" id="menuMove" style="margin-top:12px">Move to folder…</button>
+    <button class="btn ghost" id="menuDup">Duplicate</button>
     <button class="btn ghost danger" id="menuDel">Delete</button>
   </div>
 </div>
@@ -231,8 +266,14 @@
 <div class="sheet" id="settingsSheet">
   <div class="panel">
     <h2>Settings</h2>
-    <div class="opt"><span>Theme</span>
+    <div class="opt"><span>Style</span>
       <div class="seg" id="themeSeg"><button data-theme="glass">Glass</button><button data-theme="minimal">Minimal</button></div>
+    </div>
+    <div class="opt" style="flex-direction:column;align-items:stretch"><span>Color theme</span>
+      <div id="swatches"></div>
+    </div>
+    <div class="opt"><span>Color follows your grade<br><small>Green for A, blue for B… Off: always use the theme color</small></span>
+      <button class="switch" id="followSw" role="switch"></button>
     </div>
     <div class="opt" id="lightsOpt" style="display:none"><span>Window buttons</span>
       <div class="seg" id="lightsSeg"><button data-side="left">Left</button><button data-side="right">Right</button></div>
@@ -242,6 +283,56 @@
     </div>
     <div class="opt"><span>GPA weighting<br><small>Honors +0.5 · AP +1.0 · IB +1.0</small></span></div>
     <div class="opt"><span>Letter scale<br><small>A 93 · A− 90 · B+ 87 · B 83 · B− 80 · C+ 77 · C 73 · C− 70 · D+ 67 · D 63 · D− 60</small></span></div>
+    <h3 class="sect">Your data</h3>
+    <p class="note">Move everything to another computer: export a backup here, then import it in Gradient there.</p>
+    <button class="btn ghost" id="exportBtn">Export backup</button>
+    <button class="btn ghost" id="importBtn">Import backup…</button>
+    <button class="btn ghost danger" id="wipeBtn">Erase all data</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+  </div>
+</div>
+
+<!-- Name prompt (folders) -->
+<div class="sheet" id="nameSheet">
+  <div class="panel">
+    <h2 id="nameTitle">New folder</h2>
+    <input class="in" id="nameInput" placeholder="Folder name" maxlength="60" style="margin-top:10px;padding:11px 14px">
+    <button class="btn" id="nameOk">Create</button>
+  </div>
+</div>
+
+<!-- Move to folder -->
+<div class="sheet" id="moveSheet">
+  <div class="panel">
+    <h2 id="moveTitle">Move to…</h2>
+    <div class="list" id="moveList" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- Folder options -->
+<div class="sheet" id="folderSheet">
+  <div class="panel">
+    <h2 id="folderTitle">Folder</h2>
+    <button class="btn ghost" id="folderRename" style="margin-top:12px">Rename</button>
+    <button class="btn ghost danger" id="folderDel">Delete folder</button>
+  </div>
+</div>
+
+<!-- Import backup -->
+<div class="sheet" id="importSheet">
+  <div class="panel">
+    <h2>Import backup</h2>
+    <p class="note" id="importInfo"></p>
+    <button class="btn ghost" id="impMerge">Add to what’s here</button>
+    <button class="btn ghost danger" id="impReplace">Replace everything with this backup</button>
+  </div>
+</div>
+
+<!-- GPA: pick which classes to add -->
+<div class="sheet" id="pickSheet">
+  <div class="panel">
+    <h2>Add classes from…</h2>
+    <div class="list" id="pickList" style="margin-top:8px"></div>
   </div>
 </div>
 
@@ -263,6 +354,9 @@ let toastT; function toast(m){ const t=$('toast'); t.textContent=m; t.classList.
 const ICON = {
   x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  chev:'<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
+  folder:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
 };
 
 /* ================= grading scale ================= */
@@ -275,27 +369,45 @@ const tintOf = letter => !letter ? '#b46cff' : ({A:'#3ddc97',B:'#5aa9ff',C:'#ffc
 const pretty = l => l ? l.replace('-','−') : '—';
 
 /* ================= data (saved in this computer's app storage) ================= */
-const KEY = 'gradient_v1';
+const KEY = 'gradient_v1';            // same key as v0.1, so updating never loses anything
 let DB;
+const freshDB = () => ({ grades:[], gpas:[], folders:{ grade:[], gpa:[] }, last:{},
+  settings:{ aPlus43:false, style:'glass', color:'aurora', followGrade:true } });
+// Fill in anything older versions didn't have
+function normalize(d){
+  if(!d || typeof d !== 'object' || !Array.isArray(d.grades)) return null;
+  const f = freshDB();
+  d.gpas = Array.isArray(d.gpas) ? d.gpas : [];
+  d.folders = { grade: d.folders?.grade || [], gpa: d.folders?.gpa || [] };
+  d.last ||= {};
+  d.settings = { ...f.settings, ...(d.settings || {}) };
+  [...d.grades, ...d.gpas].forEach(x => { x.id ||= uid(); if(!('folder' in x)) x.folder = null; });
+  d.grades.forEach(g => { g.cats ||= []; g.cats.forEach(c => c.items ||= []); g.mode ||= 'weighted'; });
+  d.gpas.forEach(g => { g.courses ||= []; });
+  return d;
+}
 function load(){
-  try{ DB = JSON.parse(store.get(KEY)); }catch{ DB = null; }
-  if(!DB || !Array.isArray(DB.grades)) DB = { grades:[], gpas:[], settings:{ aPlus43:false }, last:{} };
-  DB.settings ||= { aPlus43:false }; DB.last ||= {}; DB.gpas ||= [];
-  if(!DB.grades.length && !DB.gpas.length && !store.get(KEY)){  // first run: one example of each
-    DB.grades.push(newGrade('My first class', true));
-    DB.gpas.push(newGpa('This year'));
+  let raw = null; try{ raw = JSON.parse(store.get(KEY)); }catch{}
+  DB = normalize(raw);
+  if(!DB){
+    DB = freshDB();
+    const oldStyle = store.get('theme'); if(oldStyle) DB.settings.style = oldStyle;
+    if(!store.get(KEY)){                       // very first run: one example of each
+      DB.grades.push(newGrade('My first class', true));
+      DB.gpas.push(newGpa('This year'));
+    }
   }
 }
 let saveT; function save(){ clearTimeout(saveT); saveT = setTimeout(() => store.set(KEY, JSON.stringify(DB)), 250); }
 addEventListener('beforeunload', () => store.set(KEY, JSON.stringify(DB)));
 
-function newGrade(name='Untitled class', example=false){
-  const cat = (n,w) => ({ id:uid(), name:n, weight:w, items: example ? [] : [] });
-  return { id:uid(), name, updated:Date.now(), mode:'weighted', finalWeight:20, target:'',
+function newGrade(name='Untitled class', example=false, folder=null){
+  const cat = (n,w) => ({ id:uid(), name:n, weight:w, items:[] });
+  return { id:uid(), name, folder, updated:Date.now(), mode:'weighted', finalWeight:20, target:'',
     cats: example ? [cat('Homework',30), cat('Quizzes',20), cat('Tests',50)] : [cat('Homework',40), cat('Tests',60)] };
 }
-function newGpa(name='Untitled GPA'){
-  return { id:uid(), name, updated:Date.now(), prevGpa:'', prevCredits:'',
+function newGpa(name='Untitled GPA', folder=null){
+  return { id:uid(), name, folder, updated:Date.now(), prevGpa:'', prevCredits:'',
     courses:[{ id:uid(), name:'', grade:'A', credits:1, level:'reg' }] };
 }
 
@@ -334,29 +446,57 @@ function gpaOf(p){
   return res;
 }
 
-/* ================= sidebar ================= */
+/* ================= sidebar (with folders) ================= */
 let mode = 'grade', cur = null;
 const docs = () => mode==='grade' ? DB.grades : DB.gpas;
-function subtitle(d){
-  if(mode==='grade'){ const r = gradeOf(d); return r.pct==null ? 'No grades yet' : `${fmt1(r.pct)}% · ${pretty(letterOf(r.pct))}`; }
+const folders = () => DB.folders[mode];
+const byRecent = arr => [...arr].sort((a,b)=>b.updated-a.updated);
+function subtitle(d, m=mode){
+  if(m==='grade'){ const r = gradeOf(d); return r.pct==null ? 'No grades yet' : `${fmt1(r.pct)}% · ${pretty(letterOf(r.pct))}`; }
   const r = gpaOf(d); return r.count ? `${fmt2(r.weighted)} weighted · ${r.count} class${r.count>1?'es':''}` : 'No classes yet';
 }
 function badge(d){
   if(mode==='grade'){ const p = gradeOf(d).pct; return p==null ? '–' : pretty(letterOf(p)); }
   const r = gpaOf(d); return r.count ? fmt2(r.unweighted).slice(0,3) : '–';
 }
+function createDoc(folder=null){
+  const d = mode==='grade' ? newGrade(undefined, false, folder) : newGpa(undefined, folder);
+  docs().unshift(d); save(); open(d);
+  const n = $('editor').querySelector('.name'); n?.focus(); n?.select();
+}
+function docRow(d, indent){
+  const r = el('button','row'+(d===cur?' on':'')+(indent?' indent':'')); r.dataset.id = d.id;
+  r.innerHTML = '<div class="badge"></div><div class="txt"><div class="t"></div><div class="s"></div></div>';
+  fillRow(r, d); r.onclick = () => open(d); return r;
+}
 function renderList(){
-  const list = $('list'); list.innerHTML = '';
+  const list = $('list'), top = list.scrollTop; list.innerHTML = '';
   const add = el('button','row'); add.innerHTML = '<div class="badge new">+</div><div class="txt"><div class="t"></div><div class="s"></div></div>';
   add.querySelector('.t').textContent = mode==='grade' ? 'New class' : 'New GPA';
   add.querySelector('.s').textContent = mode==='grade' ? 'Track grades for a class' : 'Calculate a GPA';
-  add.onclick = () => { const d = mode==='grade' ? newGrade() : newGpa(); docs().unshift(d); save(); open(d); const n = $('editor').querySelector('.name'); n?.focus(); n?.select(); };
+  add.onclick = () => createDoc(null);
   list.appendChild(add);
-  [...docs()].sort((a,b)=>b.updated-a.updated).forEach(d => {
-    const r = el('button','row'+(d===cur?' on':'')); r.dataset.id = d.id;
-    r.innerHTML = '<div class="badge"></div><div class="txt"><div class="t"></div><div class="s"></div></div>';
-    fillRow(r, d); r.onclick = () => open(d); list.appendChild(r);
+
+  const ids = new Set(folders().map(f => f.id));
+  folders().forEach(f => {
+    const items = byRecent(docs().filter(d => d.folder === f.id));
+    const h = el('div','frow'+(f.open===false?' closed':'')); h.tabIndex = 0;
+    h.innerHTML = `<span class="chev">${ICON.chev}</span><span class="ficon">${ICON.folder}</span><span class="fname"></span><span class="fcount"></span>
+      <button class="fbtn add" title="New in this folder">${ICON.plus}</button><button class="fbtn more" title="Folder options">${ICON.more}</button>`;
+    h.querySelector('.fname').textContent = f.name || 'Untitled folder';
+    h.querySelector('.fcount').textContent = items.length;
+    h.onclick = () => { f.open = f.open===false; save(); renderList(); };
+    h.onkeydown = e => { if(e.key==='Enter') h.onclick(); };
+    h.querySelector('.add').onclick = e => { e.stopPropagation(); f.open = true; createDoc(f.id); };
+    h.querySelector('.more').onclick = e => { e.stopPropagation(); openFolderMenu(f); };
+    list.appendChild(h);
+    if(f.open !== false){
+      if(!items.length){ const e = el('div','fempty','Empty — use + to add, or move items here'); list.appendChild(e); }
+      items.forEach(d => list.appendChild(docRow(d, true)));
+    }
   });
+  byRecent(docs().filter(d => !d.folder || !ids.has(d.folder))).forEach(d => list.appendChild(docRow(d, false)));
+  list.scrollTop = top;
 }
 function fillRow(r, d){
   r.querySelector('.badge').textContent = badge(d);
@@ -365,10 +505,12 @@ function fillRow(r, d){
 }
 function refreshRow(){ const r = $('list').querySelector(`[data-id="${cur?.id}"]`); if(r) fillRow(r, cur); }
 document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+$('newFolder').onclick = () => namePrompt('New folder', '', 'Create', name => {
+  folders().push({ id:uid(), name, open:true }); save(); renderList(); toast('Folder created'); });
 function setMode(m){
   mode = m; DB.last.mode = m; save();
   document.querySelectorAll('#modeSeg button').forEach(x => x.classList.toggle('on', x.dataset.mode===m));
-  const d = docs().find(x => x.id === DB.last[m]) || [...docs()].sort((a,b)=>b.updated-a.updated)[0];
+  const d = docs().find(x => x.id === DB.last[m]) || byRecent(docs())[0];
   d ? open(d) : (cur = null, renderList(), emptyEditor());
 }
 function emptyEditor(){
@@ -411,7 +553,10 @@ function setRing(r, frac, big, small){
   r.querySelector('.fg').style.strokeDashoffset = 326.7 * (1 - Math.max(0, Math.min(1, frac||0)));
   r.querySelector('.big').textContent = big; r.querySelector('.small').textContent = small;
 }
-function setTint(letter){ document.body.style.setProperty('--tint', tintOf(letter)); }
+function setTint(letter){
+  const t = THEMES[DB.settings.color] || THEMES.aurora;
+  document.body.style.setProperty('--tint', DB.settings.followGrade !== false && letter ? tintOf(letter) : t.tint);
+}
 
 /* ---- class grade editor ---- */
 function renderGrade(ed){
@@ -487,6 +632,15 @@ function renderGrade(ed){
 const findCard = c => document.querySelector(`.card[data-cat="${c.id}"]`);
 
 /* ---- GPA editor ---- */
+// Copy classes (with their current letters) from the Grades tab into this GPA
+function importClasses(arr){
+  const p = cur, have = new Set(p.courses.map(c => c.name.trim().toLowerCase()));
+  p.courses = p.courses.filter(c => c.name.trim());             // drop the blank starter row
+  let n = 0;
+  arr.forEach(g => { const pct = gradeOf(g).pct; if(pct==null || have.has((g.name||'').trim().toLowerCase())) return;
+    p.courses.push({ id:uid(), name:g.name, grade:letterOf(pct), credits:1, level:guessLevel(g.name) }); n++; });
+  touched(true); toast(n ? `Added ${n} class${n>1?'es':''}` : 'No new classes with grades to add');
+}
 // "AP Biology" → AP, "IB Art" → IB, "Honors Chem" / "Chem H" → Honors
 const guessLevel = name => /\bAP\b/i.test(name) ? 'ap' : /\bIB\b/i.test(name) ? 'ib' : /\b(honou?rs|hon|H)\b/i.test(name) ? 'hon' : 'reg';
 function renderGpa(ed){
@@ -523,11 +677,15 @@ function renderGpa(ed){
   const imp = el('button','add','↓ Add from my classes');
   imp.title = 'Adds every class from the Grades tab with its current letter';
   imp.onclick = () => {
-    const have = new Set(p.courses.map(c => c.name.trim().toLowerCase()));
-    let n = 0;
-    DB.grades.forEach(g => { const pct = gradeOf(g).pct; if(pct==null || have.has((g.name||'').trim().toLowerCase())) return;
-      p.courses.push({ id:uid(), name:g.name, grade:letterOf(pct), credits:1, level:guessLevel(g.name) }); n++; });
-    touched(true); toast(n ? `Added ${n} class${n>1?'es':''}` : 'No new classes with grades to add');
+    const fs = DB.folders.grade;
+    if(!fs.length) return importClasses(DB.grades);
+    openSheet('pickSheet'); const list = $('pickList'); list.innerHTML = '';
+    const opt = (label, sub, arr, icon) => { const b = el('button','row');
+      b.innerHTML = `<div class="badge">${icon}</div><div class="txt"><div class="t"></div><div class="s"></div></div>`;
+      b.querySelector('.t').textContent = label; b.querySelector('.s').textContent = sub;
+      b.onclick = () => { closeSheets(); importClasses(arr); }; list.appendChild(b); };
+    opt('All classes', `${DB.grades.length} classes`, DB.grades, '∗');
+    fs.forEach(f => { const arr = DB.grades.filter(g => g.folder===f.id); opt(f.name || 'Untitled folder', `${arr.length} class${arr.length===1?'':'es'}`, arr, ICON.folder); });
   };
   btns.append(add, imp); card.appendChild(btns);
   ed.appendChild(card);
@@ -592,23 +750,128 @@ function openSheet(id){ closeSheets(); $(id).classList.add('open'); }
 function closeSheets(){ document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open')); }
 document.querySelectorAll('.sheet').forEach(s => s.addEventListener('click', e => { if(e.target===s) closeSheets(); }));
 addEventListener('keydown', e => { if(e.key==='Escape') closeSheets(); });
+// "Tap again to confirm" buttons
+function confirmBtn(btn, label, armedLabel, fn){
+  btn.textContent = label; delete btn.dataset.armed;
+  btn.onclick = () => { if(!btn.dataset.armed){ btn.dataset.armed = '1'; btn.textContent = armedLabel; return; } fn(); };
+}
+// Generic name prompt (folders)
+let nameCb = null;
+function namePrompt(title, value, okLabel, cb){
+  nameCb = cb; $('nameTitle').textContent = title; $('nameOk').textContent = okLabel; $('nameInput').value = value;
+  openSheet('nameSheet'); setTimeout(() => { $('nameInput').focus(); $('nameInput').select(); }, 60);
+}
+$('nameOk').onclick = () => { const v = $('nameInput').value.trim(); if(!v) return toast('Type a name first'); closeSheets(); nameCb?.(v); };
+$('nameInput').onkeydown = e => { if(e.key==='Enter') $('nameOk').click(); };
 
+// ⋯ menu for a class / GPA
 function openMenu(){
   openSheet('menuSheet'); $('menuTitle').textContent = cur.name || 'Untitled';
-  const del = $('menuDel'); del.textContent = 'Delete'; delete del.dataset.armed;
   $('menuDup').onclick = () => { const copy = JSON.parse(JSON.stringify(cur)); copy.id = uid(); copy.name = (cur.name||'Untitled')+' (copy)'; copy.updated = Date.now();
     docs().unshift(copy); save(); closeSheets(); open(copy); toast('Duplicated'); };
-  del.onclick = () => {
-    if(!del.dataset.armed){ del.dataset.armed = '1'; del.textContent = 'Tap again to delete'; return; }
-    const arr = docs(), i = arr.indexOf(cur); arr.splice(i,1); DB.last[mode] = null; save(); closeSheets(); toast('Deleted'); setMode(mode);
-  };
+  $('menuMove').onclick = () => openMoveSheet(cur);
+  confirmBtn($('menuDel'), 'Delete', 'Tap again to delete', () => {
+    const arr = docs(); arr.splice(arr.indexOf(cur),1); DB.last[mode] = null; save(); closeSheets(); toast('Deleted'); setMode(mode); });
 }
-$('gear').onclick = () => openSheet('settingsSheet');
-function applyTheme(t){ document.body.classList.toggle('minimal', t==='minimal'); store.set('theme', t);
-  document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme===t)); }
-document.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => applyTheme(b.dataset.theme));
-$('aplusSw').onclick = () => { DB.settings.aPlus43 = !DB.settings.aPlus43; $('aplusSw').classList.toggle('on', DB.settings.aPlus43); save();
-  if(mode==='gpa') updateSummary(); renderList(); };
+function openMoveSheet(d){
+  openSheet('moveSheet'); $('moveTitle').textContent = `Move “${d.name || 'Untitled'}” to…`;
+  const list = $('moveList'); list.innerHTML = '';
+  const opt = (label, icon, fid) => { const b = el('button','row'+((d.folder||null)===fid?' on':''));
+    b.innerHTML = `<div class="badge">${icon}</div><div class="txt"><div class="t"></div></div>`; b.querySelector('.t').textContent = label;
+    b.onclick = () => { d.folder = fid; if(fid){ const f = folders().find(x=>x.id===fid); if(f) f.open = true; } save(); closeSheets(); renderList(); toast(fid ? 'Moved' : 'Removed from folder'); };
+    list.appendChild(b); };
+  opt('No folder', '—', null);
+  folders().forEach(f => opt(f.name || 'Untitled folder', ICON.folder, f.id));
+  const nf = el('button','row'); nf.innerHTML = '<div class="badge new">+</div><div class="txt"><div class="t">New folder…</div></div>';
+  nf.onclick = () => namePrompt('New folder', '', 'Create & move', name => { const f = { id:uid(), name, open:true }; folders().push(f); d.folder = f.id; save(); renderList(); toast('Moved'); });
+  list.appendChild(nf);
+}
+function openFolderMenu(f){
+  openSheet('folderSheet'); $('folderTitle').textContent = f.name || 'Untitled folder';
+  $('folderRename').onclick = () => namePrompt('Rename folder', f.name, 'Save', name => { f.name = name; save(); renderList(); });
+  confirmBtn($('folderDel'), 'Delete folder', 'Tap again — items inside are kept', () => {
+    docs().forEach(d => { if(d.folder===f.id) d.folder = null; });
+    DB.folders[mode] = folders().filter(x => x!==f); save(); closeSheets(); renderList(); toast('Folder deleted (items kept)'); });
+}
+
+/* ---- settings: style, color themes ---- */
+const THEMES = {
+  aurora:  { name:'Aurora',   c1:'#5b3cc4', base:'#241f2e', tint:'#b46cff' },
+  ocean:   { name:'Ocean',    c1:'#1d5fc2', base:'#16212d', tint:'#2fd0c9' },
+  sunset:  { name:'Sunset',   c1:'#c2411d', base:'#2a1c1f', tint:'#ff5fa2' },
+  forest:  { name:'Forest',   c1:'#1f7a4d', base:'#172420', tint:'#b5e655' },
+  rose:    { name:'Rose',     c1:'#b8326e', base:'#2a1a24', tint:'#ffa0c8' },
+  midnight:{ name:'Midnight', c1:'#26306b', base:'#12131c', tint:'#5d7bff' },
+  mono:    { name:'Mono',     c1:'#4a4a52', base:'#1b1b1f', tint:'#9a9aa6' },
+};
+function applyLook(){
+  const st = DB.settings, t = THEMES[st.color] || THEMES.aurora;
+  document.body.classList.toggle('minimal', st.style==='minimal');
+  document.body.style.setProperty('--c1', t.c1); document.body.style.setProperty('--base', t.base);
+  document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme===st.style));
+  document.querySelectorAll('#swatches button').forEach(b => b.classList.toggle('on', b.dataset.color===st.color));
+  $('followSw').classList.toggle('on', st.followGrade !== false);
+  $('aplusSw').classList.toggle('on', !!st.aPlus43);
+  updateSummary(); if(!cur) setTint(null);
+}
+document.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { DB.settings.style = b.dataset.theme; save(); applyLook(); });
+Object.entries(THEMES).forEach(([k,t]) => {
+  const b = el('button','sw'); b.dataset.color = k; b.title = t.name;
+  b.style.background = `linear-gradient(135deg, ${t.c1}, ${t.tint})`;
+  b.onclick = () => { DB.settings.color = k; save(); applyLook(); };
+  $('swatches').appendChild(b);
+});
+$('followSw').onclick = () => { DB.settings.followGrade = DB.settings.followGrade === false; save(); applyLook(); };
+$('aplusSw').onclick = () => { DB.settings.aPlus43 = !DB.settings.aPlus43; save(); applyLook(); renderList(); };
+$('gear').onclick = () => { openSheet('settingsSheet'); confirmBtn($('wipeBtn'), 'Erase all data', 'Tap again to erase everything', wipeAll); };
+
+/* ---- backup: export / import / erase ---- */
+const today = () => new Date().toISOString().slice(0,10);
+async function exportBackup(){
+  const contents = JSON.stringify({ app:'gradient', version:1, exported:new Date().toISOString(), data:DB }, null, 2);
+  const fileName = `gradient-backup-${today()}.json`;
+  const invoke = window.__TAURI__?.core?.invoke;
+  if(invoke){
+    try{ const path = await invoke('save_backup', { fileName, contents }); toast('Saved to ' + path); return; }
+    catch(e){ console.warn(e); }
+  }
+  const a = el('a'); a.href = URL.createObjectURL(new Blob([contents], {type:'application/json'})); a.download = fileName;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('Backup downloaded');
+}
+let pending = null;
+$('exportBtn').onclick = exportBackup;
+$('importBtn').onclick = () => $('importFile').click();
+$('importFile').onchange = async e => {
+  const file = e.target.files[0]; e.target.value = ''; if(!file) return;
+  try{
+    const obj = JSON.parse(await file.text());
+    const data = normalize(obj?.app === 'gradient' ? obj.data : obj);
+    if(!data) throw 0;
+    pending = data;
+    const nf = data.folders.grade.length + data.folders.gpa.length;
+    $('importInfo').textContent = `${data.grades.length} class${data.grades.length===1?'':'es'}, ${data.gpas.length} GPA${data.gpas.length===1?'':'s'}, ${nf} folder${nf===1?'':'s'}` +
+      (obj?.exported ? ` · saved ${new Date(obj.exported).toLocaleDateString()}` : '');
+    openSheet('importSheet');
+    confirmBtn($('impReplace'), 'Replace everything with this backup', 'Tap again — this erases what’s here now', () => {
+      const keep = DB.settings; DB = pending; DB.settings = { ...keep, ...pending.settings }; finishImport('Backup loaded'); });
+    $('impMerge').onclick = () => {      // add alongside what's here, with fresh ids so nothing collides
+      const map = {};
+      ['grade','gpa'].forEach(m => pending.folders[m].forEach(f => { const nid = uid(); map[f.id] = nid; DB.folders[m].push({ ...f, id:nid }); }));
+      pending.grades.forEach(g => DB.grades.push({ ...g, id:uid(), folder: g.folder ? map[g.folder] || null : null }));
+      pending.gpas.forEach(g => DB.gpas.push({ ...g, id:uid(), folder: g.folder ? map[g.folder] || null : null }));
+      finishImport('Backup added');
+    };
+  }catch{ toast('That file isn’t a Gradient backup'); }
+};
+function finishImport(msg){
+  pending = null; DB.last = DB.last || {}; store.set(KEY, JSON.stringify(DB));
+  closeSheets(); applyLook(); setMode(mode); toast(msg);
+}
+function wipeAll(){
+  const keep = DB.settings; DB = freshDB(); DB.settings = keep; store.set(KEY, JSON.stringify(DB));
+  closeSheets(); setMode(mode); toast('All data erased');
+}
 
 /* ================= window buttons (desktop app only) ================= */
 (() => {
@@ -629,9 +892,8 @@ $('aplusSw').onclick = () => { DB.settings.aPlus43 = !DB.settings.aPlus43; $('ap
 
 /* ================= boot ================= */
 load();
-applyTheme(store.get('theme') || 'glass');
-$('aplusSw').classList.toggle('on', !!DB.settings.aPlus43);
 setMode(DB.last.mode || 'grade');
+applyLook();
 </script>
 </body>
 </html>

@@ -20,10 +20,20 @@ Windows · macOS · Linux — no account, no ads, your grades never leave your c
 - Cumulative GPA with your previous semesters
 - **Add from my classes** pulls in every class from the Grades tab with its current letter
 
-**Everything else**
+**Organize**
 - Save as many classes and GPAs as you want — changes save automatically
-- Duplicate or delete with the ⋯ menu
-- Glass or Minimal theme, optional A+ = 4.3
+- **Folders** (like “Freshman Year” or “Semester 1”) in both tabs; move items with the ⋯ menu
+- Build a GPA from one folder of classes in one click
+
+**Your data**
+- **Export backup** saves everything to a file in your Downloads folder
+- **Import backup** on another computer — add to what’s there, or replace it
+- **Erase all data** (asks you twice)
+- Updating the app never deletes your data
+
+**Looks**
+- 7 color themes · Glass or Minimal style · color can follow your grade
+- Optional A+ = 4.3
 
 <p align="center"><img src="docs/gpa.png" width="720" alt="GPA view"></p>
 
